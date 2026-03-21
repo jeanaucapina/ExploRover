@@ -140,7 +140,7 @@ controllerArgs ["8", "4"]
 
 Nota tecnica importante sobre metricas:
 
-- El controlador imprime validaciones al final, pero el contador de colisiones no esta totalmente instrumentado (self.col no se incrementa en la version actual). Para reportes del jurado, conviene complementar con evidencia visual en demo y revisar esa metrica si se requiere valor numerico formal.
+- El controlador imprime validaciones al final, pero el contador de colisiones no esta totalmente instrumentado (self.col no se incrementa en la version actual). Para reportes del jurado, se recomienda adjuntar evidencia visual (videos/capturas) en GitHub y revisar esa metrica si se requiere valor numerico formal.
 
 ## 7. Descripcion del entorno (valores reportables)
 
@@ -198,3 +198,30 @@ python configurador.py
 3. Abrir worlds/rover_explorer.wbt en Webots.
 4. Iniciar simulacion.
 5. Registrar demo con al menos TC-01, TC-02 y TC-03.
+
+## 11. Evidencia visual para el jurado (GitHub)
+
+Si subes videos al repositorio, si, se pueden y se deben referenciar aqui para fortalecer la evaluacion.
+
+Recomendacion de estructura dentro del repo:
+
+- assets/videos/tc01_navegacion.mp4
+- assets/videos/tc02_recoleccion.mp4
+- assets/videos/tc03_evasion_objetivo.mp4
+- assets/videos/tc04_multimuestra.mp4 (opcional)
+- assets/videos/tc05_regreso_base.mp4 (opcional)
+
+Matriz de evidencia visual (completa con tus enlaces):
+
+| Caso | Evidencia esperada | Enlace |
+|---|---|---|
+| TC-01 | Recorrido sin colision por 60 s | Pendiente |
+| TC-02 | Deteccion y recoleccion de al menos 1 muestra | Pendiente |
+| TC-03 | Desvio por ruta alternativa ante obstaculo en trayecto | Pendiente |
+| TC-04 (opcional) | Recoleccion de 2 o mas muestras en tiempo limite | Pendiente |
+| TC-05 (opcional) | Retorno autonomo a zona base sin colisiones nuevas | Pendiente |
+
+Sugerencia practica:
+
+- Agrega en cada video una toma bird-eye del mapa, HUD con estado actual y transiciones de la maquina de estados.
+- Si una metrica numerica aun no esta instrumentada, acompana la tabla de casos con timestamp del video donde se evidencia el comportamiento.
