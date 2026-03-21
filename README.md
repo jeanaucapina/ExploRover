@@ -162,7 +162,7 @@ Nota tecnica importante sobre metricas:
 |---|---|
 | Pseudocodigo o diagrama del loop de control | Incluido (secciones 3 y 4) |
 | Arquitectura del sistema | Incluida (sensores, actuadores, estados, navegacion) |
-| Demo o video de simulacion | Pendiente de generar por el equipo |
+| Demo o video de simulacion | Incluido (2 videos en carpeta Videos) |
 | Codigo fuente | Incluido |
 | Descripcion del entorno | Incluida |
 
@@ -211,15 +211,20 @@ Recomendacion de estructura dentro del repo:
 - assets/videos/tc04_multimuestra.mp4 (opcional)
 - assets/videos/tc05_regreso_base.mp4 (opcional)
 
-Matriz de evidencia visual (completa con tus enlaces):
+Evidencia visual cargada en este repositorio:
+
+- [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4)
+- [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4)
+
+Matriz de evidencia visual:
 
 | Caso | Evidencia esperada | Enlace |
 |---|---|---|
-| TC-01 | Recorrido sin colision por 60 s | Pendiente |
-| TC-02 | Deteccion y recoleccion de al menos 1 muestra | Pendiente |
-| TC-03 | Desvio por ruta alternativa ante obstaculo en trayecto | Pendiente |
-| TC-04 (opcional) | Recoleccion de 2 o mas muestras en tiempo limite | Pendiente |
-| TC-05 (opcional) | Retorno autonomo a zona base sin colisiones nuevas | Pendiente |
+| TC-01 | Recorrido sin colision por 60 s | [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4) |
+| TC-02 | Deteccion y recoleccion de al menos 1 muestra | [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4) |
+| TC-03 | Desvio por ruta alternativa ante obstaculo en trayecto | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
+| TC-04 (opcional) | Recoleccion de 2 o mas muestras en tiempo limite | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
+| TC-05 (opcional) | Retorno autonomo a zona base sin colisiones nuevas | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
 
 Sugerencia practica:
 
