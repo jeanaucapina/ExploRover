@@ -1,172 +1,200 @@
-# ExploRover - Challenge 2 Robot Explorador (Webots)
+# ExploRover - Technical Report for Judges (Challenge 2: Autonomous Explorer Robot)
 
-Este repositorio implementa un rover autonomo para exploracion y recoleccion de muestras en un entorno desconocido de Webots, alineado al track de robotica del hackathon.
+This repository presents an autonomous rover developed in Webots for unknown-environment exploration and sample collection, aligned with the robotics track requirements.
 
-Objetivo del sistema:
+## 1. Executive Summary
 
-- Explorar sin colisionar con obstaculos.
-- Detectar puntos de interes (muestras).
-- Navegar hacia las muestras y recolectar al menos una.
-- Bonus: recolectar multiples muestras y regresar autonomamente a base.
+The system implements an end-to-end autonomous control loop for an exploration rover with:
 
-## 1. Resumen rapido de lo que ya hace
+- Obstacle-aware navigation in a randomized map.
+- Visual sample detection and approach.
+- Sample collection with a front shovel actuator.
+- Recovery behavior for blocking/stuck situations.
+- Optional mission completion behavior: return to base.
 
-- Navegacion autonoma con locomocion diferencial.
-- Evasion de obstaculos en tiempo real.
-- Deteccion de muestras por vision (recognition).
-- Planificacion de ruta con A* sobre occupancy grid.
-- Modo de recuperacion por atasco o bloqueo (BACKUP).
-- Recoleccion fisica con pala frontal.
-- Retorno a base al terminar la mision.
-- Interfaz grafica para configurar obstaculos y muestras sin tocar el codigo del controlador.
+Main technical capabilities:
 
-## 2. Sensores y actuadores usados
+- Differential-drive autonomous motion.
+- Real-time obstacle avoidance.
+- Occupancy-grid mapping from LiDAR.
+- Path planning with A* and adaptive inflation.
+- Target tracking and mission-state transitions.
+- GUI-based environment configuration (without editing controller logic).
 
-### Sensores
+## 2. System Objective and Scope
 
-| Componente | Tipo | Uso principal |
+Mandatory goals:
+
+- Navigate without collisions.
+- Detect points of interest (samples).
+- Move toward detected samples.
+- Collect at least one sample.
+
+Optional goals:
+
+- Collect multiple samples.
+- Return autonomously to a defined base area.
+
+## 3. Sensors and Actuators
+
+### Sensors
+
+| Component | Type | Role in Control System |
 |---|---|---|
-| lidar | Sensor de distancia 360 | Detectar obstaculos, actualizar mapa de ocupacion y medir riesgo frontal |
-| camera + recognition | Sensor visual | Detectar e identificar muestras en el entorno |
-| gps | Sensor de posicion | Obtener coordenadas globales x, y |
-| compass | Sensor de orientacion | Estimar heading theta para control y navegacion |
+| lidar | 360 distance sensor | Obstacle detection, occupancy-grid updates, frontal risk estimate |
+| camera + recognition | Vision sensor | Sample detection and identification |
+| gps | Position sensor | Global x, y pose |
+| compass | Orientation sensor | Heading theta for navigation/control |
 
-Nota: map_display se usa para visualizacion/diagnostico (HUD y mapa), no como sensor de entrada para la logica.
+Note: map_display is used for runtime visualization (HUD/map) and debugging support, not as a perception input.
 
-### Actuadores
+### Actuators
 
-| Componente | Tipo | Uso principal |
+| Component | Type | Role |
 |---|---|---|
-| left_motor | Actuador de traccion | Velocidad rueda izquierda |
-| right_motor | Actuador de traccion | Velocidad rueda derecha |
-| shovel_motor | Actuador mecanico | Bajar/subir pala para recolectar |
+| left_motor | Drive actuator | Left wheel velocity control |
+| right_motor | Drive actuator | Right wheel velocity control |
+| shovel_motor | Collection actuator | Shovel down/up motion for collection |
 
-## 3. Loop de control (Percibir -> Decidir -> Actuar)
-
-Pseudocodigo adaptado al proyecto:
+## 4. Perceive-Decide-Act Control Loop
 
 ```text
-FUNCION loop_principal():
-  MIENTRAS mision_activa:
-    # 1) PERCIBIR
-    pose <- leer(gps, compass)
-    distancias <- leer(lidar)
-    objetivo <- detectar_muestras(camera_recognition)
-    actualizar_occupancy_grid(distancias, pose)
+FUNCTION main_loop():
+  WHILE mission_active:
+    # 1) PERCEIVE
+    pose <- read(gps, compass)
+    ranges <- read(lidar)
+    target <- detect_samples(camera_recognition)
+    update_occupancy_grid(ranges, pose)
 
-    # 2) DECIDIR
-    estado <- determinar_estado(pose, objetivo, distancias)
-    accion <- seleccionar_accion(estado)
+    # 2) DECIDE
+    state <- determine_state(pose, target, ranges)
+    action <- select_action(state)
 
-    # 3) ACTUAR
-    ejecutar_movimiento_o_recoleccion(accion)
+    # 3) ACT
+    execute(action)
 
-    esperar(DELTA_T)
+    wait(DELTA_T)
 ```
 
-## 4. Maquina de estados
+## 5. State Machine
 
-Estados implementados en el controlador:
+Implemented states:
 
-- EXPLORAR
-- NAVEGAR
-- APROXIMAR
-- RECOLECTAR
+- EXPLORE
+- NAVIGATE
+- APPROACH
+- COLLECT
 - BACKUP
-- REGRESAR
-- COMPLETA
-
-Diagrama de estados:
+- RETURN
+- COMPLETE
 
 ```mermaid
 stateDiagram-v2
-  [*] --> EXPLORAR
+  [*] --> EXPLORE
 
-  EXPLORAR --> NAVEGAR: muestra detectada
-  EXPLORAR --> BACKUP: obstaculo cercano o atasco
-  EXPLORAR --> REGRESAR: no quedan muestras pendientes
+  EXPLORE --> NAVIGATE: sample detected
+  EXPLORE --> BACKUP: near obstacle or stuck
+  EXPLORE --> RETURN: no pending samples
 
-  NAVEGAR --> APROXIMAR: objetivo cercano
-  NAVEGAR --> BACKUP: obstaculo/atasco
-  NAVEGAR --> EXPLORAR: objetivo perdido o inaccesible
+  NAVIGATE --> APPROACH: target is close
+  NAVIGATE --> BACKUP: obstacle/stuck event
+  NAVIGATE --> EXPLORE: target lost or inaccessible
 
-  APROXIMAR --> RECOLECTAR: dentro del radio de recoleccion
-  APROXIMAR --> NAVEGAR: objetivo se aleja
+  APPROACH --> COLLECT: inside collection radius
+  APPROACH --> NAVIGATE: target becomes farther again
 
-  RECOLECTAR --> EXPLORAR: quedan muestras
-  RECOLECTAR --> REGRESAR: mision de recoleccion finalizada
+  COLLECT --> EXPLORE: pending samples remain
+  COLLECT --> RETURN: collection mission finished
 
-  BACKUP --> EXPLORAR: recuperacion sin objetivo
-  BACKUP --> NAVEGAR: recuperacion con objetivo
-  BACKUP --> REGRESAR: sin muestras restantes
+  BACKUP --> EXPLORE: recovered with no active target
+  BACKUP --> NAVIGATE: recovered with active target
+  BACKUP --> RETURN: no remaining samples
 
-  REGRESAR --> COMPLETA: robot en zona base
-  COMPLETA --> [*]
+  RETURN --> COMPLETE: rover reaches base area
+  COMPLETE --> [*]
 ```
 
-## 5. Interfaz para modificar la simulacion
+## 6. Configurable Simulation Interface
 
-El archivo configurador.py incluye una UI en Tkinter para configurar rapidamente la corrida.
+The project includes a Tkinter GUI in [configurador.py](configurador.py) to configure runs quickly.
 
-Permite:
+Supported GUI actions:
 
-- Seleccionar el archivo worlds/rover_explorer.wbt.
-- Elegir preset de dificultad (Facil, Normal, Dificil, Extremo).
-- Ajustar cantidad de obstaculos (0 a 15).
-- Ajustar cantidad de muestras (1 a 10).
-- Aplicar cambios sobre controllerArgs del mundo.
+- Select [worlds/rover_explorer.wbt](worlds/rover_explorer.wbt).
+- Choose difficulty presets (Easy/Normal/Hard/Extreme).
+- Set number of obstacles (0 to 15).
+- Set number of samples (1 to 10).
+- Write settings directly to world controller arguments.
 
-Linea que modifica la UI en el .wbt:
+Configuration line written in the world file:
 
 ```text
 controllerArgs ["n_obstacles", "n_samples"]
 ```
 
-Ejemplo:
+## 7. Challenge Test Compliance Matrix
 
-```text
-controllerArgs ["8", "4"]
-```
-
-## 6. Cumplimiento de pruebas del challenge (segun rubrica)
-
-| Caso | Tipo | Evidencia en el proyecto | Estado esperado |
+| Test Case | Priority | Implementation Evidence | Status |
 |---|---|---|---|
-| TC-01 Navegacion sin colisiones | Obligatorio | Evasion reactiva + planeacion A* + estado BACKUP | Cumple en simulaciones tipicas |
-| TC-02 Deteccion y recoleccion de muestra | Obligatorio | Camera Recognition + estados NAVEGAR/APROXIMAR/RECOLECTAR | Cumple |
-| TC-03 Evasion de obstaculo en trayecto a objetivo | Obligatorio | Replaneacion, inflation adaptativa y BACKUP | Cumple |
-| TC-04 Recoleccion de multiples muestras | Opcional | Manejo de lista de muestras descubiertas y ciclo continuo | Implementado |
-| TC-05 Regreso a zona base | Opcional | Estado REGRESAR con trail invertido y navegacion a base | Implementado |
+| TC-01 Collision-free navigation | Mandatory | Reactive avoidance + A* planning + BACKUP state | Achieved in typical simulation runs |
+| TC-02 Sample detection and collection | Mandatory | Camera recognition + NAVIGATE/APPROACH/COLLECT transitions | Achieved |
+| TC-03 Obstacle evasion while moving to target | Mandatory | Replanning + adaptive inflation + BACKUP recovery | Achieved |
+| TC-04 Multiple sample collection | Optional | Multi-target handling and repeated collection cycle | Implemented |
+| TC-05 Return to base | Optional | RETURN state with trail-based return and re-navigation | Implemented |
 
-Nota tecnica importante sobre metricas:
+Metric note:
 
-- El controlador imprime validaciones al final, pero el contador de colisiones no esta totalmente instrumentado (self.col no se incrementa en la version actual). Para reportes del jurado, se recomienda adjuntar evidencia visual (videos/capturas) en GitHub y revisar esa metrica si se requiere valor numerico formal.
+- The controller prints validation information, but collision counting is not fully instrumented in the current implementation (`self.col` is not incremented). For judge reporting, visual evidence is included and should be used together with observed behavior.
 
-## 7. Descripcion del entorno (valores reportables)
+## 8. Simulation Environment Specification
 
-| Parametro | Valor actual |
+| Parameter | Current Value |
 |---|---|
-| Tamano del mapa | 4.0 m x 4.0 m |
-| Resolucion grid | 0.05 m/celda |
-| Posicion base aproximada | (-1.75, -1.75) |
-| Posicion inicial rover aproximada | (-1.65, -1.65, 0.055) |
-| Rango de obstaculos | 0 a 15 (configurable) |
-| Rango de muestras | 1 a 10 (configurable) |
-| Radio de recoleccion | 0.25 m |
-| Distancia frontal de backup | 0.22 m |
-| Timeout maximo por objetivo | 120 s |
+| Map size | 4.0 m x 4.0 m |
+| Grid resolution | 0.05 m/cell |
+| Approximate base position | (-1.75, -1.75) |
+| Approximate rover initial pose | (-1.65, -1.65, 0.055) |
+| Obstacle range | 0 to 15 (configurable) |
+| Sample range | 1 to 10 (configurable) |
+| Collection radius | 0.25 m |
+| Front backup trigger distance | 0.22 m |
+| Max no-progress timeout per target | 120 s |
 
-## 8. Entregables esperados (checklist)
+## 9. Deliverables Checklist
 
-| Entregable | Estado en este repo |
+| Deliverable | Status in Repository |
 |---|---|
-| Pseudocodigo o diagrama del loop de control | Incluido (secciones 3 y 4) |
-| Arquitectura del sistema | Incluida (sensores, actuadores, estados, navegacion) |
-| Demo o video de simulacion | Incluido (2 videos en carpeta Videos) |
-| Codigo fuente | Incluido |
-| Descripcion del entorno | Incluida |
+| Control-loop pseudocode or state diagram | Included (Sections 4 and 5) |
+| System architecture details | Included (sensors, actuators, states, navigation) |
+| Demo/simulation video | Included (2 videos in Videos folder) |
+| Source code | Included |
+| Environment description | Included |
 
-## 9. Estructura del repositorio
+## 10. Visual Evidence for Judges (GitHub)
+
+Available videos in this repository:
+
+- [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4)
+- [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4)
+
+Evidence matrix:
+
+| Test Case | Expected Evidence | Video Link |
+|---|---|---|
+| TC-01 | 60-second collision-free exploration behavior | [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4) |
+| TC-02 | Detection and collection of at least one sample | [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4) |
+| TC-03 | Alternative-route evasion with obstacle in target path | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
+| TC-04 (optional) | Collection of 2+ samples within mission time | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
+| TC-05 (optional) | Autonomous return to base without new collisions | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
+
+Recommended judge-facing capture style:
+
+- Include top-down (bird-eye) map visibility.
+- Keep the runtime HUD visible when possible.
+- Mark timestamps per test case in demo notes.
+
+## 11. Repository Structure
 
 ```text
 ExploRover/
@@ -175,58 +203,29 @@ ExploRover/
 |-- controllers/
 |   `-- RoverExplorer/
 |       `-- RoverExplorer.py
+|-- Videos/
+|   |-- rover_explorer.mp4
+|   `-- rover_explorer_1.mp4
 `-- worlds/
     `-- rover_explorer.wbt
 ```
 
-## 10. Como ejecutar
+## 12. Reproducibility and Run Instructions
 
-Requisitos:
+Requirements:
 
-- Webots R2025a.
-- Python 3.
+- Webots R2025a
+- Python 3
 
-Pasos:
+Steps:
 
-1. Ejecutar el configurador:
+1. Run the configurator:
 
 ```bash
 python configurador.py
 ```
 
-2. Ajustar obstaculos/muestras y guardar.
-3. Abrir worlds/rover_explorer.wbt en Webots.
-4. Iniciar simulacion.
-5. Registrar demo con al menos TC-01, TC-02 y TC-03.
-
-## 11. Evidencia visual para el jurado (GitHub)
-
-Si subes videos al repositorio, si, se pueden y se deben referenciar aqui para fortalecer la evaluacion.
-
-Recomendacion de estructura dentro del repo:
-
-- assets/videos/tc01_navegacion.mp4
-- assets/videos/tc02_recoleccion.mp4
-- assets/videos/tc03_evasion_objetivo.mp4
-- assets/videos/tc04_multimuestra.mp4 (opcional)
-- assets/videos/tc05_regreso_base.mp4 (opcional)
-
-Evidencia visual cargada en este repositorio:
-
-- [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4)
-- [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4)
-
-Matriz de evidencia visual:
-
-| Caso | Evidencia esperada | Enlace |
-|---|---|---|
-| TC-01 | Recorrido sin colision por 60 s | [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4) |
-| TC-02 | Deteccion y recoleccion de al menos 1 muestra | [Videos/rover_explorer.mp4](Videos/rover_explorer.mp4) |
-| TC-03 | Desvio por ruta alternativa ante obstaculo en trayecto | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
-| TC-04 (opcional) | Recoleccion de 2 o mas muestras en tiempo limite | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
-| TC-05 (opcional) | Retorno autonomo a zona base sin colisiones nuevas | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
-
-Sugerencia practica:
-
-- Agrega en cada video una toma bird-eye del mapa, HUD con estado actual y transiciones de la maquina de estados.
-- Si una metrica numerica aun no esta instrumentada, acompana la tabla de casos con timestamp del video donde se evidencia el comportamiento.
+2. Select obstacle/sample counts and save world settings.
+3. Open [worlds/rover_explorer.wbt](worlds/rover_explorer.wbt) in Webots.
+4. Start the simulation.
+5. Record/validate at least TC-01, TC-02, and TC-03.
