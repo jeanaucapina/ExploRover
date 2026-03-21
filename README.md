@@ -188,6 +188,12 @@ Evidence matrix:
 | TC-04 (optional) | Collection of 2+ samples within mission time | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
 | TC-05 (optional) | Autonomous return to base without new collisions | [Videos/rover_explorer_1.mp4](Videos/rover_explorer_1.mp4) |
 
+Sensor-level visual evidence expected by judges:
+
+- LiDAR usage is visible through the occupancy-grid/map update during runtime (obstacle perception and free-space estimation).
+- Camera-based recognition is visible through the target framing/bounding box overlay when a sample is detected.
+- The demo should show at least one full sequence: detect target with camera frame, navigate while avoiding obstacles with LiDAR-based mapping, then collect.
+
 Recommended judge-facing capture style:
 
 - Include top-down (bird-eye) map visibility.
