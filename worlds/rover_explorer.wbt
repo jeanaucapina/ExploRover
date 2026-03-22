@@ -1,0 +1,149 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+
+WorldInfo {
+  info [
+    "Challenge 2 - Robot Explorador Autonomo v13"
+    "controllerArgs: n_obstacles n_samples"
+  ]
+  title "Rover Explorer v13"
+  basicTimeStep 16
+}
+
+Viewpoint {
+  orientation -0.577 0.577 0.577 2.094
+  position 0 0 7.5
+  near 0.05
+}
+
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+
+RectangleArena {
+  floorSize 4 4
+  floorTileSize 0.5 0.5
+  floorAppearance PBRAppearance {
+    baseColor 0.75 0.73 0.68
+    roughness 1
+    metalness 0
+  }
+  wallHeight 0.12
+  wallAppearance PBRAppearance {
+    baseColor 0.3 0.3 0.3
+    roughness 0.7
+    metalness 0
+  }
+}
+
+# ─── ZONA BASE ───
+Solid {
+  translation -1.75 -1.75 0.001
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.1 0.85 0.15 roughness 1 metalness 0 transparency 0.2 }
+      geometry Plane { size 0.5 0.5 }
+    }
+  ]
+  name "base_zone"
+}
+Solid { translation -1.95 -1.95 0.05 children [ DEF BPOST Shape { appearance PBRAppearance { baseColor 0 1 0 emissiveColor 0 0.3 0 roughness 0.3 metalness 0.1 } geometry Cylinder { height 0.10 radius 0.012 } } ] name "bpost1" }
+Solid { translation -1.55 -1.95 0.05 children [ USE BPOST ] name "bpost2" }
+Solid { translation -1.95 -1.55 0.05 children [ USE BPOST ] name "bpost3" }
+Solid { translation -1.55 -1.55 0.05 children [ USE BPOST ] name "bpost4" }
+
+# ─── Obstáculos y muestras: generados dinámicamente por el controller ───
+
+# ═══════════════════════════════════════════════════════════
+#  ROBOT con canasta física — controllerArgs: n_obs n_samples
+# ═══════════════════════════════════════════════════════════
+Robot {
+  translation -1.65 -1.65 0.055
+  rotation 0 0 1 0.785
+  name "RoverExplorer"
+  controller "RoverExplorer"
+  controllerArgs ["12", "2"]
+  supervisor TRUE
+  children [
+
+    DEF BODY Shape {
+      appearance PBRAppearance { baseColor 0.18 0.18 0.22 roughness 0.5 metalness 0.3 }
+      geometry Cylinder { height 0.07 radius 0.125 }
+    }
+    # Tapa decorativa
+    Pose { translation 0 0 0.04 children [ Shape { appearance PBRAppearance { baseColor 0.1 0.55 0.85 roughness 0.3 metalness 0.4 } geometry Cylinder { height 0.008 radius 0.075 } } ] }
+    # Indicador frontal
+    Pose { translation 0.11 0 0.04 children [ Shape { appearance PBRAppearance { baseColor 1 0.2 0.1 emissiveColor 0.4 0.05 0 roughness 0.4 metalness 0 } geometry Box { size 0.03 0.02 0.012 } } ] }
+
+    # ── CANASTA (fondo + 4 paredes semi-transparentes) ──
+    Pose { translation -0.04 0 0.04 children [ Shape { appearance PBRAppearance { baseColor 0.4 0.25 0.1 roughness 0.8 metalness 0.1 } geometry Box { size 0.10 0.12 0.004 } } ] }
+    Pose { translation 0.01 0 0.065 children [ Shape { appearance PBRAppearance { baseColor 0.5 0.3 0.1 roughness 0.7 metalness 0.1 transparency 0.3 } geometry Box { size 0.004 0.12 0.05 } } ] }
+    Pose { translation -0.09 0 0.065 children [ Shape { appearance PBRAppearance { baseColor 0.5 0.3 0.1 roughness 0.7 metalness 0.1 transparency 0.3 } geometry Box { size 0.004 0.12 0.05 } } ] }
+    Pose { translation -0.04 0.06 0.065 children [ Shape { appearance PBRAppearance { baseColor 0.5 0.3 0.1 roughness 0.7 metalness 0.1 transparency 0.3 } geometry Box { size 0.10 0.004 0.05 } } ] }
+    Pose { translation -0.04 -0.06 0.065 children [ Shape { appearance PBRAppearance { baseColor 0.5 0.3 0.1 roughness 0.7 metalness 0.1 transparency 0.3 } geometry Box { size 0.10 0.004 0.05 } } ] }
+
+    # ── LIDAR 360° ──
+    Pose { translation 0 0 0.05 children [
+      Lidar { name "lidar" horizontalResolution 180 fieldOfView 6.2832 numberOfLayers 1 minRange 0.04 maxRange 2.0 noise 0.005 resolution 0.005 }
+    ] }
+
+    # ── CAMERA ──
+    Pose { translation 0.12 0 0.02 children [
+      Camera { name "camera" fieldOfView 1.2 width 160 height 120 near 0.02 recognition Recognition { maxRange 3.5 maxObjects 10 } }
+    ] }
+
+    Display { name "map_display" width 200 height 200 }
+
+    # ── PALA ──
+    HingeJoint {
+      jointParameters HingeJointParameters { position 0.4 axis 0 1 0 anchor 0.125 0 -0.015 }
+      device [ RotationalMotor { name "shovel_motor" maxVelocity 3.0 minPosition -0.7 maxPosition 0.5 maxTorque 5.0 } ]
+      endPoint Solid {
+        translation 0.155 0 -0.02
+        rotation 0 1 0 0.4
+        children [
+          Shape { appearance PBRAppearance { baseColor 0.6 0.6 0.6 roughness 0.6 metalness 0.5 } geometry Box { size 0.05 0.13 0.006 } }
+          Pose { translation 0.035 0 -0.012 children [ Shape { appearance PBRAppearance { baseColor 0.85 0.55 0.08 emissiveColor 0.12 0.08 0 roughness 0.4 metalness 0.4 } geometry Box { size 0.025 0.15 0.025 } } ] }
+        ]
+        name "shovel"
+        boundingObject Box { size 0.09 0.15 0.035 }
+        physics Physics { density -1 mass 0.04 }
+      }
+    }
+
+    # ── RUEDAS ──
+    HingeJoint {
+      jointParameters HingeJointParameters { axis 0 1 0 anchor 0 0.12 -0.015 }
+      device [ RotationalMotor { name "left_motor" maxVelocity 20 maxTorque 10 } ]
+      endPoint Solid { translation 0 0.13 -0.015 rotation 1 0 0 1.5708
+        children [ DEF WH Shape { appearance PBRAppearance { baseColor 0.08 0.08 0.08 roughness 1 metalness 0.05 } geometry Cylinder { height 0.022 radius 0.04 } } ]
+        name "left_wheel" boundingObject Cylinder { height 0.022 radius 0.04 } physics Physics { density -1 mass 0.08 }
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters { axis 0 1 0 anchor 0 -0.12 -0.015 }
+      device [ RotationalMotor { name "right_motor" maxVelocity 20 maxTorque 10 } ]
+      endPoint Solid { translation 0 -0.13 -0.015 rotation 1 0 0 1.5708
+        children [ USE WH ]
+        name "right_wheel" boundingObject Cylinder { height 0.022 radius 0.04 } physics Physics { density -1 mass 0.08 }
+      }
+    }
+    Pose { translation -0.08 0 -0.035 children [
+      BallJoint { jointParameters BallJointParameters { anchor 0 0 0 }
+        endPoint Solid { children [ Shape { appearance PBRAppearance { baseColor 0.5 0.5 0.5 roughness 0.8 metalness 0.2 } geometry Sphere { radius 0.018 } } ]
+          name "caster" boundingObject Sphere { radius 0.018 } physics Physics { density -1 mass 0.02 }
+        }
+      }
+    ] }
+
+    GPS { name "gps" }
+    Compass { name "compass" }
+  ]
+
+  boundingObject Cylinder { height 0.07 radius 0.125 }
+  physics Physics { density -1 mass 1.2 }
+}
